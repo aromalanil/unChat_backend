@@ -8,7 +8,7 @@ const authToken = (req, res, next) => {
 
     if (!accessToken) {
         res.status(401);
-        res.json({error : "Unauthorized"})
+        res.json({ error: "Unauthorized" })
     }
     else {
         jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
@@ -20,7 +20,7 @@ const authToken = (req, res, next) => {
                 req.user = user;
                 next();
             }
-        })
+        });
     }
 };
 

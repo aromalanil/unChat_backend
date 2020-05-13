@@ -8,19 +8,20 @@ const authToken = require('../Middleware/authToken');
 
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
+const tokenModel = require('../Models/Token');
 
 
 //To register a new user
 router.post('/register', async (req, res) => {
-    let name = req.body.name;
-    let password = req.body.password;
-    let username = req.body.username;
+    const name = req.body.name;
+    const password = req.body.password;
+    const username = req.body.username;
 
     if (name && password && username) //Checking if any field is empty
     {
-        let hashedPassword = await bcrypt.hash(password, 8);
+        const hashedPassword = await bcrypt.hash(password, 8);
 
-        let user = new userModel({
+        const user = new userModel({
             name: name,
             password: hashedPassword,
             username: username
@@ -29,7 +30,7 @@ router.post('/register', async (req, res) => {
             if (err) {
                 res.json(err);
             }
-            res.json(result);
+            res.send(201).json({ error: "User created" });
         });
     }
     else {
@@ -41,12 +42,12 @@ router.post('/register', async (req, res) => {
 
 
 //To make an existing user login
-router.get('/login', async (req, res) => {
-    let username = req.body.username;
-    let password = req.body.password;
+router.post('/login', async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
 
     if (username && password) {
-        let user = await userModel.findOne({ username: username });
+        const user = await userModel.findOne({ username: username });
         if (!user) {
             res.status(404);
             res.json({ error: "User Not Found" })
@@ -54,8 +55,13 @@ router.get('/login', async (req, res) => {
 
         if (await bcrypt.compare(password, user.password)) {
 
-            const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET);
-            res.json({ accessToken: accessToken })
+            const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
+            const refreshToken = jwt.sign({ username: user.username }, process.env.REFRESH_TOKEN_SECRET);
+            const token = new tokenModel({
+                data: refreshToken
+            })
+            token.save();
+            res.json({ accessToken, refreshToken });
         }
         else {
             res.status(401);
@@ -69,6 +75,39 @@ router.get('/login', async (req, res) => {
 });
 
 
+//Generate new accessToken from refreshToken
+router.get('/token', async (req, res) => {
+    const token = await tokenModel.findOne({ data: req.body.token })
+
+    if (!token) {
+        res.status(401).json({ error: "Unauthorized" });
+    }
+    else {
+        jwt.verify(token.data, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+            if (err) {
+                res.status(403);
+                res.send("Invalid Token" + err);
+            }
+            else {
+                const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
+                res.json({ accessToken })
+            }
+        })
+    }
+
+});
+
+
+//Logout the user
+router.delete('/logout', authToken, (req, res) => {
+    const token = req.body.token;
+
+    tokenModel.findOneAndDelete({ data: token }, (err, data) => {
+        res.sendStatus(204)
+    });
+})
+
+
 //Returns the details of a user
 router.get('/dashboard', authToken, async (req, res) => {
     const username = req.user.username;
@@ -79,8 +118,49 @@ router.get('/dashboard', authToken, async (req, res) => {
         name: user.name,
         messages: messages && messages.messages
     }
-    res.json(data)
-})
+    res.json(data);
+});
+
+
+//Change Password of User
+router.post('/password', async (req, res) => {
+    const password = req.body.password;
+    const username = req.body.username;
+    const newPassword = req.body.newPassword;
+
+    if (password && username) //Checking if any field is empty
+    {
+        const user = await userModel.findOne({ username: username });
+        if (user) {
+            
+            if (await bcrypt.compare(password, user.password)) {
+                
+                const hashedPassword = await bcrypt.hash(newPassword, 8);
+                user.password = hashedPassword;
+                user.save((err, result) => {
+                    if (err) {
+                        res.status(500).json({ error: "Unable to Save" })
+                    }
+                    else {
+                        res.json({ message: "Password Changed" })
+                    }
+                })
+            }
+            else{
+                res.status(401).json({ error: "Invalid Password" })
+            }
+        }
+        else {
+            res.status(404).json({error:"User not found"})
+        }
+
+    }
+    else {
+        res.status(400).json({
+            error: "All fields are required"
+        })
+    }
+});
 
 
 //Get details of a particular user
@@ -91,10 +171,10 @@ router.get('/:username', async (req, res) => {
     if (user) {
         res.json({ username: user.username, name: user.name });
     }
-    else{
-        res.status(404).json({error:"User not found"})
+    else {
+        res.status(404).json({ error: "User not found" })
     }
-})
+});
 
 
 module.exports = router;
