@@ -10,14 +10,20 @@ const messageSchema = new mongoose.Schema({
     messages: [{
         data: {
             type: String,
+            required: true,
         },
         date: {
             type: Date,
             default: Date.now
+        },
+        didUserRead: {
+            type: Boolean,
+            default: false
         }
+
     }]
 });
 
 messageSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('user', messageSchema);
+module.exports = mongoose.model('message', messageSchema);
