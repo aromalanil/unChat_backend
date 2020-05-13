@@ -1,3 +1,5 @@
+//An Object containing details about routes available in this API
+
 const apiDetails = {
     message: "Anonymous Messaging API",
     endpoints: [
@@ -15,6 +17,11 @@ const apiDetails = {
             url: '/user/dashboard',
             params: [],
             description: 'Returns Username,Name and Messages of Logged In User (User should be logged in to have access)'
+        },
+        {
+            url: '/user/:username',
+            params:[],
+            description: 'Get details of the specific user'
         },
         {
             url: '/message/:username',

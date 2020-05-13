@@ -1,17 +1,23 @@
+/* User Router */
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authToken = require('../Middleware/authToken');
+
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
 
+
+//To register a new user
 router.post('/register', async (req, res) => {
     let name = req.body.name;
     let password = req.body.password;
     let username = req.body.username;
 
-    if (name && password && username) {
+    if (name && password && username) //Checking if any field is empty
+    {
         let hashedPassword = await bcrypt.hash(password, 8);
 
         let user = new userModel({
@@ -33,6 +39,8 @@ router.post('/register', async (req, res) => {
     }
 });
 
+
+//To make an existing user login
 router.get('/login', async (req, res) => {
     let username = req.body.username;
     let password = req.body.password;
@@ -60,16 +68,32 @@ router.get('/login', async (req, res) => {
     }
 });
 
+
+//Returns the details of a user
 router.get('/dashboard', authToken, async (req, res) => {
     const username = req.user.username;
     const user = await userModel.findOne({ username: username });
     const messages = await messageModel.findOne({ username: username });
-    const data ={
-        username :user.username,
-        name : user.name,
+    const data = {
+        username: user.username,
+        name: user.name,
         messages: messages && messages.messages
     }
     res.json(data)
+})
+
+
+//Get details of a particular user
+router.get('/:username', async (req, res) => {
+    const username = req.params.username;
+    const user = await userModel.findOne({ username: username });
+
+    if (user) {
+        res.json({ username: user.username, name: user.name });
+    }
+    else{
+        res.status(404).json({error:"User not found"})
+    }
 })
 
 

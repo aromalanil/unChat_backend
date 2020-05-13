@@ -1,8 +1,12 @@
+/* Message Router */
+
 const express = require('express');
 const router = express.Router();
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
 
+
+//Send message to user using his username
 router.post('/:username', async (req, res) => {
     const username = req.params.username;
     const message = req.body.message;
@@ -33,7 +37,6 @@ router.post('/:username', async (req, res) => {
         res.sendStatus(200);
     }
 })
-
 
 
 module.exports = router;

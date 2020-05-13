@@ -1,3 +1,5 @@
+/*Middleware to check if the user is authorized using jwt*/
+
 const jwt = require('jsonwebtoken');
 
 const authToken = (req, res, next) => {
