@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    tokenVersion: {
+        type: Number,
+        default: 1
+    },
     date: {
         type: Date,
         default: Date.now

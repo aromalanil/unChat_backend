@@ -8,7 +8,6 @@ const authToken = require('../Middleware/authToken');
 
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
-const tokenModel = require('../Models/Token');
 
 
 //To register a new user
@@ -28,13 +27,13 @@ router.post('/register', async (req, res) => {
         })
         user.save((err, result) => {
             if (err) {
-                res.json(err);
+                res.json({ error: err.message });
             }
-            res.send(201).json({ error: "User created" });
+            res.status(201).json({ message: "User created" });
         });
     }
     else {
-        res.json({
+        res.status(400).json({
             error: "All fields are required"
         })
     }
@@ -42,68 +41,43 @@ router.post('/register', async (req, res) => {
 
 
 //To make an existing user login
-router.post('/login', async (req, res) => {
+router.get('/login', async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
     if (username && password) {
         const user = await userModel.findOne({ username: username });
         if (!user) {
-            res.status(404);
-            res.json({ error: "User Not Found" })
+            res.status(404).json({ error: "User Not Found" })
         }
 
         if (await bcrypt.compare(password, user.password)) {
 
-            const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
-            const refreshToken = jwt.sign({ username: user.username }, process.env.REFRESH_TOKEN_SECRET);
-            const token = new tokenModel({
-                data: refreshToken
-            })
-            token.save();
-            res.json({ accessToken, refreshToken });
+            const data = { username: user.username, tokenVersion: user.tokenVersion };
+            const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            res.json({ accessToken });
         }
         else {
-            res.status(401);
-            res.json({ error: "Invalid Password" })
+            res.status(401).json({ error: "Invalid Password" })
         }
     }
     else {
-        res.status(400);
-        res.json({ error: "All fields are required" })
+        res.status(400).json({ error: "All fields are required" })
     }
-});
-
-
-//Generate new accessToken from refreshToken
-router.get('/token', async (req, res) => {
-    const token = await tokenModel.findOne({ data: req.body.token })
-
-    if (!token) {
-        res.status(401).json({ error: "Unauthorized" });
-    }
-    else {
-        jwt.verify(token.data, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-            if (err) {
-                res.status(403);
-                res.send("Invalid Token" + err);
-            }
-            else {
-                const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
-                res.json({ accessToken })
-            }
-        })
-    }
-
 });
 
 
 //Logout the user
-router.delete('/logout', authToken, (req, res) => {
-    const token = req.body.token;
+router.delete('/logout', authToken, async (req, res) => {
+    const username = req.user.username;
+    const user = await userModel.findOne({ username: username });
 
-    tokenModel.findOneAndDelete({ data: token }, (err, data) => {
-        res.sendStatus(204)
+    user.tokenVersion++;
+    user.save((err, result) => {
+        if (err) {
+            res.json({ error: err.message });
+        }
+        res.status(201).json({ message: "Successfully Logged out" });
     });
 })
 
@@ -132,9 +106,9 @@ router.post('/password', async (req, res) => {
     {
         const user = await userModel.findOne({ username: username });
         if (user) {
-            
+
             if (await bcrypt.compare(password, user.password)) {
-                
+
                 const hashedPassword = await bcrypt.hash(newPassword, 8);
                 user.password = hashedPassword;
                 user.save((err, result) => {
@@ -146,12 +120,12 @@ router.post('/password', async (req, res) => {
                     }
                 })
             }
-            else{
+            else {
                 res.status(401).json({ error: "Invalid Password" })
             }
         }
         else {
-            res.status(404).json({error:"User not found"})
+            res.status(404).json({ error: "User not found" })
         }
 
     }

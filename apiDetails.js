@@ -10,7 +10,7 @@ const apiDetails = {
         },
         {
             url: '/user/logout',
-            params: ['token'],
+            params: [],
             description: 'Allow the user to logout from the device'
         },
         {
