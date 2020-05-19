@@ -24,11 +24,6 @@ const apiDetails = {
             description: 'Returns Username,Name and Messages of Logged In User (User should be logged in to have access)'
         },
         {
-            url: '/user/token',
-            params: ['token'],
-            description:'Generate new accessToken from refreshToken'
-        },
-        {
             url: '/user/password',
             params: ['username', 'password','newPassword'],
             description: 'Change password of existing user'

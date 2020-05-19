@@ -8,13 +8,12 @@ const authToken = (req, res, next) => {
     const accessToken = authHeader && authHeader.split(' ')[1];
 
     if (!accessToken) {
-        res.status(401);
-        res.json({ error: "Unauthorized" })
+        res.status(401).json({ error: "Unauthorized" })
     }
     else {
         jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             if (err) {
-                res.status(403).send("Invalid accessToken");
+                res.status(403).json({ error: "Invalid accessToken" });
             }
             else {
                 userModel.findOne({ username: user.username }).then(userData => {

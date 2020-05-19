@@ -27,9 +27,17 @@ router.post('/register', async (req, res) => {
         })
         user.save((err, result) => {
             if (err) {
-                res.json({ error: err.message });
+                if(err.name==="ValidationError")
+                {
+                    res.status(409).json({ error: "Username exist"  });
+                }
+                else{
+                    res.json({error:err.message});
+                }
             }
-            res.status(201).json({ message: "User created" });
+            else{
+                res.status(201).json({ message: "User created" });
+            }
         });
     }
     else {
@@ -41,20 +49,18 @@ router.post('/register', async (req, res) => {
 
 
 //To make an existing user login
-router.get('/login', async (req, res) => {
+router.post('/login', async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
     if (username && password) {
         const user = await userModel.findOne({ username: username });
         if (!user) {
-            res.status(404).json({ error: "User Not Found" })
+            res.status(404).json({ error: "User Not Found" });
         }
-
         if (await bcrypt.compare(password, user.password)) {
-
             const data = { username: user.username, tokenVersion: user.tokenVersion };
-            const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            const accessToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '7d' });
             res.json({ accessToken });
         }
         else {
@@ -77,7 +83,9 @@ router.delete('/logout', authToken, async (req, res) => {
         if (err) {
             res.json({ error: err.message });
         }
-        res.status(201).json({ message: "Successfully Logged out" });
+        else {
+            res.status(201).json({ message: "Successfully Logged out" });
+        }
     });
 })
 
@@ -98,11 +106,13 @@ router.get('/dashboard', authToken, async (req, res) => {
 
 //Change Password of User
 router.post('/password', async (req, res) => {
+    console.log(req.body);
+
     const password = req.body.password;
     const username = req.body.username;
     const newPassword = req.body.newPassword;
 
-    if (password && username) //Checking if any field is empty
+    if (password && username && newPassword) //Checking if any field is empty
     {
         const user = await userModel.findOne({ username: username });
         if (user) {
@@ -116,7 +126,7 @@ router.post('/password', async (req, res) => {
                         res.status(500).json({ error: "Unable to Save" })
                     }
                     else {
-                        res.json({ message: "Password Changed" })
+                        res.status(200).json({ message: "Password Changed" })
                     }
                 })
             }
@@ -135,6 +145,17 @@ router.post('/password', async (req, res) => {
         })
     }
 });
+
+
+//Returns if user is logged in
+router.get('/authenticate', authToken, (req, res) => {
+    if (req.user) {
+        res.json({ logged: true });
+    }
+    else {
+        res.json({ logged: false });
+    }
+})
 
 
 //Get details of a particular user

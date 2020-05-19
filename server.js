@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const userRouter = require('./Routes/user');
 const messageRouter = require('./Routes/message');
 const apiDetails = require('./apiDetails');
-
+const cors = require('cors');
 
 if (process.env.ENVIRONMENT != 'Production')  //Only Required for Development Environment
 {
@@ -11,6 +11,9 @@ if (process.env.ENVIRONMENT != 'Production')  //Only Required for Development En
 }
 
 const app = express();
+
+//Enabling Cross Origin requests
+app.use(cors());
 
 //Body Parsers
 app.use(express.json());
