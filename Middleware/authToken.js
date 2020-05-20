@@ -8,7 +8,7 @@ const authToken = (req, res, next) => {
     const accessToken = authHeader && authHeader.split(' ')[1];
 
     if (!accessToken) {
-        res.status(401).json({ error: "Unauthorized" })
+        res.status(401).json({ error: "Unauthorized" });
     }
     else {
         jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
@@ -30,4 +30,4 @@ const authToken = (req, res, next) => {
     }
 };
 
-module.exports = authToken
+module.exports = authToken;

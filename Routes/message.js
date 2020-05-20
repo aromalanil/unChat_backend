@@ -13,11 +13,13 @@ router.post('/:username', async (req, res) => {
 
     if (!message) {
         res.status(400).json({ error: "Message field cannot be empty" });
+        return;
     }
 
     const user = await userModel.findOne({ username: username });
     if(!user){
-        res.status(400).json({ error: `User '${username}' does not exist` })
+        res.status(400).json({ error: `User '${username}' does not exist` });
+        return;
     }
 
     let userMessages = await messageModel.findOne({ username: username });
