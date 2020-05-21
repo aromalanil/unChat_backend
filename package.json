@@ -1,6 +1,6 @@
 {
-  "name": "msg",
-  "version": "0.1.0",
+  "name": "unchat-backend",
+  "version": "1.0.0",
   "description": "",
   "main": "server.js",
   "scripts": {

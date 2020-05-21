@@ -1,7 +1,7 @@
 //An Object containing details about routes available in this API
 
 const apiDetails = {
-    message: "Anonymous Messaging API",
+    message: "unChat REST API",
     endpoints: [
         {
             url: '/user/login',
