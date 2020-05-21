@@ -18,8 +18,9 @@ router.post('/register', async (req, res) => {
 
     if (name && password && username) //Checking if any field is empty
     {
+        let hashedPassword;
         try {
-            const hashedPassword = await bcrypt.hash(password, 8);
+            hashedPassword = await bcrypt.hash(password, 8);
         }
         catch (err) {
             res.status(500).json({ error: "Error in hashing user password" });
@@ -145,7 +146,7 @@ router.post('/password', async (req, res) => {
         }
     }
     else {
-        res.status(400).json({error: "All fields are required"});
+        res.status(400).json({ error: "All fields are required" });
     }
 });
 
