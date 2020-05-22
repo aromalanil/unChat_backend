@@ -4,11 +4,18 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Cryptr = require('cryptr');
 const authToken = require('../Middleware/authToken');
 
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
 
+if (process.env.ENVIRONMENT != 'Production')  //Only Required for Development Environment
+{
+    require('dotenv').config();
+}
+
+const cryptr = new Cryptr(process.env.MSG_ENCRYPT_SECRET);
 
 //To register a new user
 router.post('/register', async (req, res) => {
@@ -103,11 +110,21 @@ router.delete('/logout', authToken, async (req, res) => {
 router.get('/dashboard', authToken, async (req, res) => {
     const username = req.user.username;
     const user = await userModel.findOne({ username: username });
-    const messages = await messageModel.findOne({ username: username });
+    const messageData = await messageModel.findOne({ username: username });
+
+    let decryptedMessages = null;
+
+    if(messageData){
+        decryptedMessages = messageData.messages.map(message=>{
+            message.data = cryptr.decrypt(message.data);
+            return message;
+        });
+    }
+
     const data = {
         username: user.username,
         name: user.name,
-        messages: messages && messages.messages
+        messages:  decryptedMessages
     }
     res.json(data);
 });
