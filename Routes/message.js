@@ -4,14 +4,12 @@ const express = require('express');
 const router = express.Router();
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
-const Cryptr = require('cryptr');
+const { encryptString } = require('../Helpers/Crypto');
 
 if (process.env.ENVIRONMENT != 'Production')  //Only Required for Development Environment
 {
     require('dotenv').config();
 }
-
-const cryptr = new Cryptr(process.env.MSG_ENCRYPT_SECRET);
 
 //Send message to user using his username
 router.post('/:username', async (req, res) => {
@@ -31,7 +29,7 @@ router.post('/:username', async (req, res) => {
 
     let encryptedMessage;
     try {
-        encryptedMessage = cryptr.encrypt(message);
+        encryptedMessage = await encryptString(message);
     }
     catch (err) {
         res.status(500).json({ error: "Failed to encrypt message" });

@@ -4,18 +4,16 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Cryptr = require('cryptr');
 const authToken = require('../Middleware/authToken');
 
 const userModel = require('../Models/User');
 const messageModel = require('../Models/Message');
+const { decryptString } = require('../Helpers/Crypto');
 
 if (process.env.ENVIRONMENT != 'Production')  //Only Required for Development Environment
 {
     require('dotenv').config();
 }
-
-const cryptr = new Cryptr(process.env.MSG_ENCRYPT_SECRET);
 
 //To register a new user
 router.post('/register', async (req, res) => {
@@ -115,15 +113,17 @@ router.get('/dashboard', authToken, async (req, res) => {
     let decryptedMessages = null;
 
     if(messageData){
-        decryptedMessages = messageData.messages.map(message=>{
-            try{
-                message.data = cryptr.decrypt(message.data);
-            }catch(err){
-                console.error(err);
-                return res.status(500).json({ error: "Unable to decrypt messages" })
-            }
-            return message;
-        });
+        try {
+            decryptedMessages = await Promise.all(
+              messageData.messages.map(async (message) => {
+                message.data = await decryptString(message.data);
+                return message;
+              }),
+            );
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Unable to decrypt messages' });
+        }
     }
 
     const data = {
