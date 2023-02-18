@@ -116,7 +116,12 @@ router.get('/dashboard', authToken, async (req, res) => {
 
     if(messageData){
         decryptedMessages = messageData.messages.map(message=>{
-            message.data = cryptr.decrypt(message.data);
+            try{
+                message.data = cryptr.decrypt(message.data);
+            }catch(err){
+                console.error(err);
+                return res.status(500).json({ error: "Unable to decrypt messages" })
+            }
             return message;
         });
     }
